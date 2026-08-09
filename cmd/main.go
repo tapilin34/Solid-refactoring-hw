@@ -3,14 +3,14 @@ package main
 import (
 	"fmt"
 
-	"example/solid/internal/repository"
+	"example/solid/cmd/example"
 	"example/solid/internal/repository/model"
 	"example/solid/internal/service/order"
 	"example/solid/internal/service/send"
 )
 
 func main() {
-	r := repository.TestRepository{}
+	r := example.TestRepository{}
 
 	newOrder := model.Order{
 		Customer: "customer@example.com",
