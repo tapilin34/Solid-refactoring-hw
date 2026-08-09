@@ -1,16 +1,38 @@
 package main
 
 import (
-	"fmt"
+	"database/sql"
+	"log"
 
-	"example/solid/cmd/example"
 	"example/solid/internal/repository/model"
+	"example/solid/internal/repository/sqlite"
 	"example/solid/internal/service/order"
 	"example/solid/internal/service/send"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
-	r := example.TestRepository{}
+	db, err := sql.Open("sqlite3", "orders.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS orders (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			customer TEXT NOT NULL,
+			products TEXT NOT NULL,
+			total REAL NOT NULL,
+			status TEXT NOT NULL
+		)
+	`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	r := sqlite.NewSQLiteRepository(db)
 
 	newOrder := model.Order{
 		Customer: "customer@example.com",
@@ -19,23 +41,23 @@ func main() {
 		Status:   "pending",
 	}
 
-	// Email-отправка
+	// Создание заказа с отправкой Email
 	emailService := order.NewOrderService(
 		r,
 		&send.EmailSender{},
 	)
 
 	if err := emailService.CreateOrder(newOrder); err != nil {
-		fmt.Println("Ошибка при создании заказа через email:", err)
+		log.Fatal("Ошибка при создании заказа через email:", err)
 	}
 
-	// SMS-отправка
+	// Создание заказа с отправкой SMS
 	smsService := order.NewOrderService(
 		r,
 		&send.SMSSender{},
 	)
 
 	if err := smsService.CreateOrder(newOrder); err != nil {
-		fmt.Println("Ошибка при создании заказа через SMS:", err)
+		log.Fatal("Ошибка при создании заказа через SMS:", err)
 	}
 }
